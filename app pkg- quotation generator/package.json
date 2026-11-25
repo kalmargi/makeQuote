@@ -1,0 +1,29 @@
+{
+  "name": "quotation-maker",
+  "productName": "Quotation Maker",
+  "version": "1.0.0",
+  "description": "Offline quotation maker",
+  "author": "Quotation Maker",
+  "main": "main.js",
+  "scripts": { "dist": "electron-builder --win nsis" },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.local.quotationmaker",
+    "productName": "Quotation Maker",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "qmaker.html"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "createDesktopShortcut": true,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

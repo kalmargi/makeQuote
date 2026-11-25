@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Quotation Maker</title>
+<style>
+/* ===== STYLES: app screen ===== */
+:root{--bg:#f5f7fa;--card:#fff;--tx:#1f2933;--mu:#6b7785;--bd:#d5dbe3;--ac:#2f6fb3;--dg:#c0392b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px 'Segoe UI',Arial,sans-serif}
+.wrap{max-width:1000px;margin:auto;padding:12px}nav{display:flex;gap:6px;margin-bottom:12px}nav button{flex:1}
+button,input,select{font:inherit;color:var(--tx)}
+button{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:8px 12px;cursor:pointer}
+button.p,nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}button.d{color:var(--dg)}button.gr{background:#2e8b57;color:#fff;border-color:#2e8b57}
+input,select{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:7px;width:100%}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+label{font-size:12px;color:var(--mu);display:block;margin-bottom:3px}
+table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid var(--bd);padding:6px;text-align:left}th{background:var(--bg);font-size:13px}
+td.n,th.n{text-align:right}td input{min-width:70px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chips button{color:#1f2933;border-color:#b9c3cf}
+.c0{background:#dce9f6}.c1{background:#e6e6e6}.c2{background:#fdf0cc}.c3{background:#dcecd5}.c4{background:#fff}
+.tot{margin-left:auto;max-width:300px}.tot div{display:flex;justify-content:space-between;align-items:center;padding:4px 0;gap:10px}
+.tot input{width:120px;text-align:right}.big{font-weight:700;font-size:18px;border-top:2px solid var(--tx)}
+.hide{display:none!important}.tc{font-size:13px;color:var(--mu)}
+.ov{position:fixed;inset:0;z-index:20;display:flex;background:rgba(0,0,0,.45);align-items:center;justify-content:center}
+#pvo{background:var(--bg);display:flex;align-items:stretch;justify-content:flex-start}
+.side{width:290px;padding:14px;overflow:auto;border-right:1px solid var(--bd);background:var(--card)}.side>div{margin-bottom:10px}.side button{width:100%;margin-bottom:6px}
+#pvm{flex:1;overflow:auto;background:#8a8f96;padding:15px}
+#vm .box{background:var(--card);border-radius:10px;padding:14px;max-width:860px;width:96%;max-height:94vh;overflow:auto}
+#dlg .box{background:var(--card);border-radius:10px;padding:18px;width:360px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;align-items:center}
+#toast div{background:#1f2933;color:#fff;padding:9px 16px;border-radius:8px}#toast .bad{background:var(--dg)}
+</style></head><body>
+<div class="wrap">
+<nav><button id="t-q" class="on" onclick="tab('q')">Quotation</button><button id="t-r" onclick="tab('r')">Records</button><button id="t-w" onclick="tab('w')">Weights &amp; Backup</button></nav>
+
+<!-- ===== TAB: QUOTATION ===== -->
+<div id="q">
+<div class="card"><div class="g">
+<div><label>Customer name *</label><input id="cn"></div>
+<div><label>Phone</label><input id="cp"></div>
+<div><label>Address</label><input id="ca"></div>
+<div><label>Date (dd-mm-yyyy)</label><input id="dt" maxlength="10" placeholder="dd-mm-yyyy"></div>
+<div><label>Valid until (dd-mm-yyyy)</label><input id="vu" maxlength="10" placeholder="dd-mm-yyyy"></div>
+<div><label>Prepared by *</label><select id="by"><option value="">Select</option><option>RH</option><option>SS</option><option>SN</option><option>DN</option><option>VY</option></select></div></div></div>
+<div class="card"><div class="g">
+<div><label>Material</label><select id="cat" onchange="fillSub()"><option>TMT</option><option>GP Pipe</option><option>MS</option><option>Mesh</option><option>Conecc Blocks</option><option>Covering Block</option><option>Cement</option></select></div>
+<div id="sw"><label id="sl">Brand</label><select id="sub" onchange="chips()"></select></div></div>
+<div class="chips" id="chips"></div>
+<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)"><button class="gr" onclick="addX()">+ Add custom item (not in list)</button></div></div>
+<div class="card"><div style="overflow-x:auto"><table>
+<thead><tr><th>#</th><th>Description</th><th class="n">Qty (L / nos)</th><th class="n">Weight (kg)</th><th class="n">Rate</th><th class="n">Amount</th><th></th></tr></thead><tbody id="lines"></tbody></table></div>
+<p class="tc" id="empty">Pick items above to add them.</p>
+<div class="tot"><div><span>Subtotal</span><b id="sub$"></b></div><div><span>Freight</span><input id="fr" type="number" min="0" value="0" oninput="calc()"></div><div class="big"><span>Total</span><span id="tot"></span></div></div></div>
+<div class="card tc"><b>TERMS &amp; CONDITIONS</b><ul style="margin:6px 0 0;padding-left:20px"><li>Above information is not an invoice and only an estimate of goods/ services.</li><li>Payment will be due prior to provision or delivery of goods/ services.</li></ul></div>
+<button class="p" id="sb" onclick="submitQ()">Submit &amp; save record</button> <button onclick="reset()">New quotation</button>
+</div>
+
+<!-- ===== TAB: RECORDS ===== -->
+<div id="r" class="hide"><div class="card"><div style="overflow-x:auto"><table>
+<thead><tr><th>#</th><th>Entry date</th><th>Customer</th><th class="n">Amount</th><th>Done by</th><th></th></tr></thead><tbody id="rec"></tbody></table></div></div>
+<button onclick="chPw()">Change delete password</button></div>
+
+<!-- ===== TAB: WEIGHTS & BACKUP ===== -->
+<div id="w" class="hide">
+<div class="card"><b>Backup &amp; restore</b><p class="tc">Data is stored on this PC only. Save a backup file regularly.</p>
+<button onclick="expData()">Save backup file</button> <button onclick="$('imp').click()">Restore from backup file</button><input type="file" id="imp" accept=".json" class="hide" onchange="impData(this)"></div>
+<div class="card"><p class="tc">Enter estimated weight (kg) per length for each item. Saved automatically.</p><div id="wl"></div></div></div>
+</div>
+
+<!-- ===== OVERLAY: PRINT PREVIEW ===== -->
+<div id="pvo" class="ov hide"><div class="side">
+<div><label>Printer</label><select id="s-pr" onchange="renderPrev()"></select></div>
+<div><label>Paper size</label><select id="s-pa" onchange="paperChg()"><option value="A4">A4</option><option value="A5">A5</option><option value="Letter">Letter</option><option value="Legal">Legal</option><option value="T80">Thermal roll 80 mm</option><option value="T58">Thermal roll 58 mm</option></select></div>
+<div id="s-orw"><label>Orientation</label><select id="s-or" onchange="renderPrev()"><option value="0">Portrait</option><option value="1">Landscape</option></select></div>
+<div><label>Margins</label><select id="s-mg" onchange="renderPrev()"><option value="0">None</option><option value="2">2 mm</option><option value="5">5 mm</option><option value="10">10 mm</option><option value="20">20 mm</option></select></div>
+<div><label>Scale %</label><input id="s-sc" type="number" min="10" max="200" oninput="renderPrev()"></div>
+<div><label>Copies</label><input id="s-cp" type="number" min="1" max="99"></div>
+<button class="p" onclick="doPrint(true)">Print</button><button onclick="doPrint(false)">More settings (Windows dialog)</button><button onclick="closePrint()">Cancel</button></div>
+<div id="pvm"><div id="pvw" style="margin:auto"><iframe id="pvf" style="border:0;background:#fff;transform-origin:0 0"></iframe></div></div></div>
+
+<!-- ===== OVERLAY: VIEW RECORD ===== -->
+<div id="vm" class="ov hide"><div class="box"><div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:8px"><button id="vp">Print</button><button class="p" onclick="$('vm').classList.add('hide')">Close</button></div>
+<div style="overflow:auto"><iframe id="vf" style="border:0;width:794px;height:1000px;background:#fff"></iframe></div></div></div>
+
+<!-- ===== OVERLAY: ASK / INPUT DIALOG ===== -->
+<div id="dlg" class="ov hide"><div class="box"><p id="dm" style="margin:0 0 12px"></p><input id="di" class="hide" style="margin-bottom:12px">
+<div style="display:flex;gap:8px;justify-content:flex-end"><button id="dn">Cancel</button><button class="p" id="dy">Yes</button></div></div></div>
+<div id="toast"></div>
+
+<script>
+/* ===== 1. CATALOGUE (edit item lists here) ===== */
+const TMT=['4.8MM','6MM','8MM','10MM','12MM','16MM','4MM','20MM'],BR=['JSW','PS','VRKP'],GA=['18G','16G','14G','12G'];
+const GP=[['1 1/2 x 1 1/2 (38x38)',0],['1 1/2 x 3/4 (40x20)',0],['1 1/4 x 1/4 (32x32)',0],['1/2 x 1/2 (15x15)',0],['1 x 1(25x25)',0],
+['2 1/2 x 1 1/2 (60x40)',1],['2 x 2 (50x50)',1],['2 x 1(50x25)',1],
+['3 3/4 x 1(95x25)',2],['3/4 x 3/4(20x20)',2],['3 x 1 1/2(80x40)',2],['3 x 1(80x25)',2],
+['4 x 1(95x25)',3],['4 x 2(100x50)',3],['4 x 4(100x100)',3],['5 x 2(125x65)',3]];
+const ANG=['1 1/2 INCH X 1/4 INCH (40X40X6)','1 1/2 INCH X 1/8 INCH (40X40X3)','1 1/4 INCH X 1/4 INCH (35X35X6)','1 1/4 INCH X 1/8 INCH (32X32X3)','1 INCH X 1/4 INCH (25X25X6)','1 INCH X 1/8 INCH (25X25X3)','2 1/2 INCH X 1/4 INCH (65X65X6)','2 INCH X 1/4 INCH (50X50X6)','2 INCH X 1/8 INCH (50X50X3)','3/4 INCH X 1/4 INCH (20X20X6)','3/4 INCH X 1/8 INCH (20X20X3)','3 INCH X 1/4 INCH (75X75X5)','3 INCH X 1/4 INCH (75X75X6)'].map(x=>'ANGLER '+x);
+const MSH=['1/2X1/2 GI WELDED MESH KG','1X1 GI WELDED MESH KG','4x4 X5 FT CHAIN LINK MESH','FENS NET BLUE (BELI BALE)','FIBRE MESH 4"','FIBRE MESH 6"','GI CHAIN LINK 100X100X2.50MM-4 FEET','GI CHAIN LINK 100X100X2.50MM-5 FEET','GI CHAIN LINK MESH','G I WELD MESH Kg','GREEN COUTED MESH BIG','GREEN COUTED MESH SMALL','GREEN HEXAGONAL FENCING NET(4*83)','GRREN MESH.','NYLON MESH MTR','PVC GREEN COATED MESH BIG','SAND MESH','SAND MESH METAL','SAND MESH (MTR)','SS GI WIRE MESH'];
+const FLT=['1 1/2 INCH X 10 MM (40X10)','1 1/2 INCH X 1/2 INCH (40X10)','1 1/2 INCH X 1/4 INCH (40X6)','1 1/2 INCH X 1/8 INCH (40X3)','1 1/4 INCH X 1/4 INCH (32X6)','1 1/4 INCH X 1/8 INCH (32X3)','1 INCH X 1/4 INCH (25X6)','1 INCH X 1/8 INCH (25X3)','2 1/2 INCH X 1/4 INCH (65X6)','2 1/2 INCH X 1/8 INCH (65X3)','2 INCH X 10 MM (50X10)','2 INCH X 1/4 INCH (50X6)','2 INCH X 1/8 INCH (50X3)','3/4 INCH X 1/4 INCH (20X6)','3/4 INCH X 1/8 INCH (20X3)','3 INCH X 1/4 INCH (75X6)','3 INCH X 1/8 INCH (75X3)','4 INCH X 1/4 INCH (100X6)','4 INCH X 1/8 INCH (100X3)','6 INCH X 1/4 INCH (150X6)'].map(x=>'MS FLAT '+x);
+/* Direct-entry materials (qty x rate). Object = has a sub-list (Type/Brand); array = no sub-list */
+const DIRECT={'MS':{'WIRE':['BARBED WIRE','MS WIRE','TATA BARBED WIRE','TATA BINDING WIRE'],'NAILS':['MS NAILS','CONCRETE NAILS','ZINK NAILS'],'ANGLER':ANG,'FLAT':FLT,
+'CHANNEL':['2 3/4 x 1/4 INCH[70x35x35x6]','3 x 1/4[75x40x40x6]','4 x 1/4[100x50x50x6]'],'BRIGHT FLAT':['1 1/4 x 1/4 [32x6]'],'PLAIN ROD':['6MM','10MM','12MM','16MM'],
+'SQUARE ROD':['10MM','12MM'],'SQUARE PIPE':['1 1/4 x 1 1/4','2 1/2 x 1 1/2'],'PIPE':['12INCH']},
+'Mesh':MSH,'Conecc Blocks':['Big','Small'],'Covering Block':['Big','Small'],
+'Cement':{'ACC':['PPC','C+','GOLD'],'JK':['43 OPC','PPC','PSC','SS'],'PRIYACEM':['PPC(BOPP)','PPC(HDPE)'],'RAMCO':['SUPERCRETE','SUPERGRADE','SUPERFAST','43 OPC','SUPERPLASTER 25kg','SUPERPLASTER 50KG'],'DALMIA':['53 OPC','PPC','43 OPC'],'UT':['UT']}};
+const FULL=['Mesh'],NOSUB=['WIRE','NAILS','ANGLER','FLAT'];
+
+/* ===== 2. HELPERS: DOM, formatting, toast, dialogs ===== */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const f=n=>(+n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fm=n=>'\u20B9'+f(n);
+const p2=n=>String(n).padStart(2,'0');
+const today=()=>{const d=new Date();return p2(d.getDate())+'-'+p2(d.getMonth()+1)+'-'+d.getFullYear()};
+const okDate=s=>{const m=/^(\d{2})-(\d{2})-(\d{4})$/.exec(s);if(!m)return false;const d=new Date(+m[3],m[2]-1,+m[1]);return d.getDate()==+m[1]&&d.getMonth()==m[2]-1};
+function toast(msg,bad){const t=document.createElement('div');t.textContent=msg;if(bad)t.className='bad';$('toast').appendChild(t);setTimeout(()=>t.remove(),bad?4500:2500)}
+const refocus=()=>{try{window.api&&window.api.refocus()}catch(e){}};
+/* in-page dialog: returns true/false (ask) or text/null (with input) */
+function dlg(msg,input,type){return new Promise(res=>{const i=$('di');$('dm').textContent=msg;i.classList.toggle('hide',!input);i.type=type||'text';i.value='';
+$('dy').textContent=input?'OK':'Yes';$('dlg').classList.remove('hide');if(input)setTimeout(()=>i.focus(),30);
+const done=v=>{$('dlg').classList.add('hide');res(v);refocus()};
+$('dy').onclick=()=>done(input?i.value:true);$('dn').onclick=()=>done(input?null:false);
+i.onkeydown=e=>{if(e.key=='Enter')$('dy').click();if(e.key=='Escape')$('dn').click()}})}
+const ask=m=>dlg(m);
+const hash=s=>{let a=3735928559,b=1103547991;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}return (a>>>0).toString(16)+(b>>>0).toString(16)};
+
+/* ===== 3. DATA STORE (one localStorage key, merged over defaults) ===== */
+const KEY='qmaker_data';
+const DEF={w:{},r:[],pw:'',ps:{printer:'',paper:'A4',landscape:false,margin:10,scale:100,copies:1}};
+function merge(p){p=(p&&typeof p=='object')?p:{};return {...DEF,...p,w:{...(p.w||{})},r:Array.isArray(p.r)?p.r:[],ps:{...DEF.ps,...(p.ps||{})}}}
+function load(){try{return merge(JSON.parse(localStorage.getItem(KEY)))}catch(e){return merge({})}}
+let D=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D));return true}catch(e){toast('Could not save data',1);return false}}
+function expData(){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,1)],{type:'application/json'}));a.download='qmaker-backup-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();toast('Backup file created')}catch(e){toast('Backup failed',1)}}
+function impData(inp){const file=inp.files[0];inp.value='';if(!file)return;const rd=new FileReader();
+rd.onload=async()=>{let o;try{o=JSON.parse(rd.result)}catch(e){toast('Not a valid backup file',1);return}
+if(!(await ask('Replace all current data with this backup?')))return;D=merge(o);if(save()){toast('Backup restored');tab('q');reset()}};rd.readAsText(file)}
+
+/* ===== 4. QUOTATION FORM ===== */
+let L=[],editId=null,CUR=[];
+function tab(t){['q','r','w'].forEach(x=>{$(x).classList.toggle('hide',x!=t);$('t-'+x).classList.toggle('on',x==t)});if(t=='r')recs();if(t=='w')wts();refocus()}
+function fillSub(){const c=$('cat').value,d=DIRECT[c],has=!d||!Array.isArray(d);$('sw').classList.toggle('hide',!has);$('sl').textContent=c=='GP Pipe'?'Gauge':c=='MS'?'Type':'Brand';
+$('sub').innerHTML=(d?(has?Object.keys(d):[]):(c=='GP Pipe'?GA:BR)).map(x=>`<option>${esc(x)}</option>`).join('');chips()}
+function chips(){const c=$('cat').value,d=DIRECT[c],s=$('sub').value;
+CUR=d?(Array.isArray(d)?d:d[s]).map(x=>[x,4]):c=='GP Pipe'?GP:TMT.map(x=>[x,4]);
+$('chips').innerHTML=CUR.map(([n,k],i)=>`<button class="c${k}" onclick="add(${i})">${esc(n)}</button>`).join('')}
+function add(i){const n=CUR[i][0],c=$('cat').value,d=DIRECT[c],s=$('sub').value;
+if(d){const desc=(FULL.includes(c)?[n]:[c,Array.isArray(d)||NOSUB.includes(s)||n.toUpperCase().startsWith(s.toUpperCase())?'':s,n]).filter((x,k,a)=>x&&x!=a[k-1]).join(' ');L.push({d:1,key:'D|'+desc,desc,qty:1,rate:0});lines();return}
+const g=c=='GP Pipe';L.push({key:(g?'GP|':'TMT|')+s+'|'+n,desc:(g?'GP Pipe ':'TMT ')+s+' '+n,qty:1,rate:0});lines()}
+function addX(){L.push({d:1,c:1,u:'',key:'D|custom',desc:'',qty:1,rate:0});lines();const e=document.querySelectorAll('.xdesc');if(e.length)e[e.length-1].focus()}
+function ed(i,k,v){L[i][k]=(k=='qty'||k=='rate')?+v:v;if(k=='desc')L[i].key='D|'+v;calc()}
+function lines(){$('empty').classList.toggle('hide',L.length>0);
+$('lines').innerHTML=L.map((l,i)=>`<tr><td>${i+1}</td><td>${l.c?`<input class="xdesc" placeholder="Item description" value="${esc(l.desc)}" oninput="ed(${i},'desc',this.value)"><input placeholder="Unit (kg, pcs...)" style="margin-top:4px" value="${esc(l.u)}" oninput="ed(${i},'u',this.value)">`:esc(l.desc)+(/^MS /.test(l.desc)?`<input placeholder="Add details (size, grade...)" style="margin-top:4px" value="${esc(l.note)}" oninput="ed(${i},'note',this.value)">`:'')}</td>
+<td class="n"><input type="number" min="0" value="${l.qty}" oninput="ed(${i},'qty',this.value)"></td><td class="n" id="k${i}"></td>
+<td class="n"><input type="number" min="0" value="${l.rate||''}" oninput="ed(${i},'rate',this.value)"></td><td class="n" id="a${i}"></td>
+<td><button class="d" onclick="L.splice(${i},1);lines()">&#10005;</button></td></tr>`).join('');calc()}
+const kg=l=>(+l.qty||0)*(+D.w[l.key]||0);
+const A=l=>l.d?(+l.qty||0)*(+l.rate||0):kg(l)*(+l.rate||0);
+function total(){return L.reduce((s,l)=>s+A(l),0)+(+$('fr').value||0)}
+function calc(){let s=0;L.forEach((l,i)=>{s+=A(l);$('k'+i).textContent=l.d?'\u2013':D.w[l.key]?f(kg(l)):'set weight';$('a'+i).textContent=fm(A(l))});
+$('sub$').textContent=fm(s);$('tot').textContent=fm(s+(+$('fr').value||0))}
+function reset(){L=[];editId=null;['cn','cp','ca','vu','by'].forEach(i=>$(i).value='');$('dt').value=today();$('fr').value=0;$('sb').textContent='Submit & save record';lines()}
+function bad(id,msg){toast(msg,1);$(id).focus()}
+function submitQ(){
+if(!$('cn').value.trim())return bad('cn','Customer name is required');
+if(!$('by').value)return bad('by','Prepared by is required');
+if(!okDate($('dt').value))return bad('dt','Enter the date as dd-mm-yyyy');
+if($('vu').value&&!okDate($('vu').value))return bad('vu','Enter valid until as dd-mm-yyyy');
+if(!L.length)return toast('Add at least one item',1);
+if(L.some(l=>l.c&&!l.desc.trim()))return toast('Enter a description for the custom item',1);
+const old=D.r.find(r=>r.id==editId);
+const rec={id:editId||Date.now(),entry:old?old.entry:today(),cn:$('cn').value.trim(),cp:$('cp').value,ca:$('ca').value,dt:$('dt').value,vu:$('vu').value,by:$('by').value,fr:+$('fr').value||0,
+L:L.map(l=>({...l,wt:+D.w[l.key]||0})),total:total()};
+if(editId)D.r=D.r.map(r=>r.id==editId?rec:r);else D.r.push(rec);
+if(!save())return;toast(editId?'Record updated':'Record saved');reset();tab('r');openPrint(rec)}
+
+/* ===== 5. RECORDS (view / edit / print / delete with password) ===== */
+function recs(){$('rec').innerHTML=D.r.length?[...D.r].sort((a,b)=>a.id-b.id).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.entry)}</td><td>${esc(r.cn)}</td><td class="n">${fm(r.total)}</td><td>${esc(r.by)}</td>
+<td><button onclick="edit(${r.id})">Edit</button> <button onclick="viewRec(${r.id})">View</button> <button onclick="openPrint(${r.id})">Print</button> <button class="d" onclick="del(${r.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="6">No records yet.</td></tr>'}
+function edit(id){const r=D.r.find(x=>x.id==id);if(!r)return;editId=id;$('cn').value=r.cn;$('cp').value=r.cp||'';$('ca').value=r.ca||'';$('dt').value=r.dt;$('vu').value=r.vu||'';$('by').value=r.by;$('fr').value=r.fr||0;
+L=r.L.map(l=>({key:l.key,desc:l.desc,qty:l.qty,rate:l.rate,d:l.d,c:l.c,u:l.u,note:l.note}));$('sb').textContent='Update record';tab('q');lines()}
+const pwOk=s=>hash(s)===(D.pw||hash('admin123'));
+async function del(id){const p=await dlg('Enter password to delete this record:',1,'password');if(p===null)return;
+if(!pwOk(p))return toast('Wrong password',1);if(!(await ask('Delete this record?')))return;D.r=D.r.filter(r=>r.id!=id);if(save()){recs();toast('Record deleted')}}
+async function chPw(){const o=await dlg('Enter current password:',1,'password');if(o===null)return;if(!pwOk(o))return toast('Wrong password',1);
+const n=await dlg('Enter new password:',1,'password');if(!n)return;D.pw=hash(n);if(save())toast('Password changed')}
+
+/* ===== 6. WEIGHTS TAB ===== */
+function wts(){const row=(k,n,c)=>`<tr class="c${c}" style="color:#1f2933"><td>${esc(n)}</td><td style="width:130px"><input type="number" min="0" step="any" value="${D.w[k]??''}" data-k="${esc(k)}" oninput="setW(this.dataset.k,this.value)"></td></tr>`;let h='';
+BR.forEach(b=>h+=`<h4>TMT \u2013 ${b} (kg per length)</h4><table>${TMT.map(n=>row('TMT|'+b+'|'+n,n,4)).join('')}</table>`);
+GA.forEach(g=>h+=`<h4>GP Pipe \u2013 ${g} (kg per length)</h4><table>${GP.map(([n,c])=>row('GP|'+g+'|'+n,n,c)).join('')}</table>`);$('wl').innerHTML=h}
+function setW(k,v){if(v==='')delete D.w[k];else D.w[k]=+v;save();calc()}
+
+/* ===== 7. PRINTED DOCUMENT (shared by preview, print and view) ===== */
+const unit=l=>l.c?(l.u||''):/^MS /.test(l.desc)?'kg':/^Cement /.test(l.desc)?'bags':/^(Conecc|Covering) /.test(l.desc)?'pcs':'';
+function quoteHtml(r){const PA=l=>l.d?l.qty*l.rate:l.qty*l.wt*l.rate,dd=v=>v||'-';
+const rows=r.L.map((l,i)=>`<tr><td>${i+1}</td><td>${esc(l.c?l.desc:l.desc.replace(/^(TMT|GP Pipe|Cement|MS(?! FLAT)) /,''))+(l.note?' '+esc(l.note):'')}</td><td class="r">${l.d?'':esc(l.qty)+' L'}</td><td class="r">${l.d?esc((l.qty+' '+unit(l)).trim()):f(l.qty*l.wt)+' kg'}</td><td class="r">${fm(l.rate)}</td><td class="r">${fm(PA(l))}</td></tr>`).join('');
+return `<h2>QUOTATION</h2><div class="hd"><div><b>${esc(r.cn)}</b><br>${esc(r.ca)}<br>Ph: ${esc(r.cp)}</div><div class="r">Date: ${esc(dd(r.dt))}<br>Valid until: ${esc(dd(r.vu))}</div></div>
+<table><thead><tr><th>#</th><th>Description</th><th class="r"></th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>${rows}
+${r.fr?`<tr><td>${r.L.length+1}</td><td>Freight</td><td></td><td></td><td></td><td class="r">${fm(r.fr)}</td></tr>`:''}<tr class="tt"><td colspan="5" class="r">Total</td><td class="r">${fm(r.total)}</td></tr></tbody></table>
+<p style="margin:18px 0 4px"><b>TERMS &amp; CONDITIONS</b></p><ul><li>Above information is not an invoice and only an estimate of goods/ services.</li><li>Payment will be due prior to provision or delivery of goods/ services.</li></ul><div class="by">${esc(r.by)}</div>`}
+/* print CSS: black on white, no outer border; thermal = smaller font, tight padding */
+function docHtml(r,ps,prev){const th=String(ps.paper)[0]=='T',fs=th?(ps.paper=='T58'?12:13):18,pad=th?2:6,z=prev&&ps.scale!=100?`body{zoom:${ps.scale/100}}`:'';
+return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>@page{margin:0}*{box-sizing:border-box}
+body{margin:0;padding:${+ps.margin}mm;font:${fs}px 'Segoe UI',Arial,sans-serif;color:#000;background:#fff}
+h2{text-align:center;margin:0 0 10px;font-size:1.3em}.hd{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border-bottom:1px solid #999;padding:${pad}px;text-align:left;vertical-align:top}tr{page-break-inside:avoid}
+.r{text-align:right}.tt td{font-weight:700;font-size:1.25em}ul{margin:0;padding-left:20px;font-size:.85em}.by{font-size:8px;color:#777;margin-top:24px}${z}</style></head><body>${quoteHtml(r)}</body></html>`}
+function viewRec(id){const r=D.r.find(x=>x.id==id);if(!r)return;const fr=$('vf');fr.onload=()=>{try{fr.style.height=fr.contentDocument.body.scrollHeight+20+'px'}catch(e){}};
+fr.srcdoc=docHtml(r,{...DEF.ps},false);$('vp').onclick=()=>{$('vm').classList.add('hide');openPrint(id)};$('vm').classList.remove('hide')}
+
+/* ===== 8. PRINT PREVIEW & PRINTING ===== */
+let PR=null,PRN=null;
+const isTh=p=>String(p)[0]=='T';
+function readPS(){const ps={printer:$('s-pr').value,paper:$('s-pa').value,landscape:$('s-or').value=='1',margin:+$('s-mg').value,scale:Math.min(200,Math.max(10,+$('s-sc').value||100)),copies:Math.min(99,Math.max(1,Math.round(+$('s-cp').value||1)))};D.ps=ps;save();return ps}
+function paperPx(ps){const m={A4:[794,1123],A5:[559,794],Letter:[816,1056],Legal:[816,1344],T80:[302,400],T58:[219,400]}[ps.paper]||[794,1123];return ps.landscape&&!isTh(ps.paper)?[m[1],m[0]]:m}
+function paperChg(){const t=isTh($('s-pa').value),m=$('s-mg');if(t&&m.value=='10')m.value='2';if(!t&&m.value=='2')m.value='10';renderPrev()}
+async function openPrint(x){PR=typeof x=='object'?x:D.r.find(q=>q.id==x);if(!PR)return;const ps=D.ps;
+if(PRN===null){PRN=[];try{if(window.api)PRN=await window.api.printers()||[]}catch(e){}}
+$('s-pr').innerHTML=PRN.length?PRN.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}${p.isDefault?' (default)':''}</option>`).join(''):'<option value="">Default printer</option>';
+const def=PRN.find(p=>p.isDefault);$('s-pr').value=PRN.some(p=>p.name==ps.printer)?ps.printer:(def?def.name:'');
+$('s-pa').value=ps.paper;$('s-or').value=ps.landscape?'1':'0';$('s-mg').value=String(ps.margin);$('s-sc').value=ps.scale;$('s-cp').value=ps.copies;
+$('pvo').classList.remove('hide');renderPrev()}
+function renderPrev(){if(!PR)return;const ps=readPS(),[W,H]=paperPx(ps),fr=$('pvf'),w=$('pvw');$('s-orw').classList.toggle('hide',isTh(ps.paper));
+const s=Math.min(1,($('pvm').clientWidth-30)/W);fr.style.width=W+'px';fr.style.height=H+'px';fr.style.transform='scale('+s+')';w.style.width=W*s+'px';w.style.height=H*s+'px';
+fr.onload=()=>{try{const h=Math.max(H,fr.contentDocument.body.scrollHeight);fr.style.height=h+'px';w.style.height=h*s+'px'}catch(e){}};fr.srcdoc=docHtml(PR,ps,true)}
+function closePrint(){$('pvo').classList.add('hide');PR=null;refocus()}
+function browserPrint(html){const fr=document.createElement('iframe');fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+fr.onload=()=>{fr.contentWindow.focus();fr.contentWindow.print();setTimeout(()=>fr.remove(),3000)};fr.srcdoc=html;document.body.appendChild(fr)}
+async function doPrint(silent){if(!PR)return;const ps=readPS(),th=isTh(ps.paper);
+if(!window.api){browserPrint(docHtml(PR,ps,true));return}
+let res;try{res=await window.api.print({html:docHtml(PR,ps,false),printer:ps.printer,paper:ps.paper,thermal:th,landscape:!th&&ps.landscape,scale:ps.scale,copies:ps.copies,silent})}catch(e){res={ok:false,err:String(e)}}
+refocus();if(res&&res.ok){toast('Sent to printer');closePrint()}else if(!/cancel/i.test((res&&res.err)||''))toast('Print failed: '+((res&&res.err)||'unknown error'),1)}
+
+/* ===== 9. START ===== */
+fillSub();reset();
+</script></body></html>
